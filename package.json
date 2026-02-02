@@ -1,0 +1,24 @@
+{
+    "name": "multi-model-ai-app",
+    "version": "1.0.0",
+    "description": "AI Multi-Modal Agent Web App",
+    "workspaces": [
+        "client",
+        "server"
+    ],
+    "scripts": {
+        "install:all": "npm install && cd client && npm install && cd ../server && npm install",
+        "dev:client": "cd client && npm run dev",
+        "dev:server": "cd server && npm run dev",
+        "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\""
+    },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "concurrently": "^8.2.2",
+        "drizzle-orm": "^0.45.1",
+        "drizzle-zod": "^0.8.3",
+        "zod": "^4.3.6"
+    }
+}
