@@ -4,13 +4,14 @@ import torch
 import numpy as np
 import logging
 from voice_service.core.model import model_manager
+from voice_service.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 class AudioService:
     @staticmethod
     def generate_clone(text: str, ref_audio_path: str, ref_text: str, language: str = "English"):
-        model = model_manager.get_model()
+        model = model_manager.get_model(settings.MODEL_BASE)
         
         logger.info(f"Cloning voice. Text: {text[:20]}... RefText: {ref_text[:20]}...")
         
@@ -32,16 +33,7 @@ class AudioService:
 
     @staticmethod
     def generate_design(text: str, instruct: str, language: str = "English"):
-        # Note: This might require the VoiceDesign model specifically if the Base model doesn't support it excellently
-        # But the docs imply Base might handle some tasks or we might need to load specific Checkpoints.
-        # For simplicity, we try with the current loaded model, assuming user might configure the right one 
-        # OR we might need to swap models.
-        # However, the docs show: model = Qwen3TTSModel.from_pretrained("Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign", ...)
-        # If the currently loaded model is Base, it might not work as well for Design.
-        # We will assume for this step that the user wants one primary function or we handle re-loading (which is slow).
-        # Let's try to use the loaded model.
-        
-        model = model_manager.get_model()
+        model = model_manager.get_model(settings.MODEL_DESIGN)
         logger.info(f"Designing voice. Text: {text[:20]}... Instruct: {instruct[:20]}...")
         
         if hasattr(model, 'generate_voice_design'):
@@ -59,7 +51,7 @@ class AudioService:
 
     @staticmethod
     def generate_custom(text: str, speaker: str, language: str = "English", instruct: str = ""):
-        model = model_manager.get_model()
+        model = model_manager.get_model(settings.MODEL_CUSTOM)
         if hasattr(model, 'generate_custom_voice'):
             wavs, sr = model.generate_custom_voice(
                 text=text,

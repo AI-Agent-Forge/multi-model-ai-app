@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { Send, Download } from 'lucide-react';
 
 const PREDEFINED_SPEAKERS = [
-    "Anna", "Bella", "Charkie", "Daniel", "Emma", "Finn", "Grace"
-    // Add real Qwen speakers here dynamically later or mock for now
+    'aiden', 'dylan', 'eric', 'ono_anna', 'ryan', 'serena', 'sohee', 'uncle_fu', 'vivian'
 ];
 
 export const CustomVoice: React.FC = () => {
@@ -21,7 +20,7 @@ export const CustomVoice: React.FC = () => {
             formData.append('speaker', speaker);
             formData.append('language', 'English');
 
-            const response = await fetch('http://localhost:8000/api/v1/tts/custom', {
+            const response = await fetch('http://localhost:8001/api/v1/tts/custom', {
                 method: 'POST',
                 body: formData,
             });

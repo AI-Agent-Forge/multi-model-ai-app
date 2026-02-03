@@ -1,5 +1,6 @@
 import torch
 import logging
+import gc
 from typing import Optional, Any
 from voice_service.core.config import settings
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 class ModelManager:
     _instance = None
     model: Any = None
-    tokenizer: Any = None
+    current_model_name: Optional[str] = None
     
     def __new__(cls):
         if cls._instance is None:
@@ -24,23 +25,27 @@ class ModelManager:
         return cls._instance
 
     def load_model(self, model_name: str = settings.MODEL_BASE):
-        if self.model is not None:
-             # Already loaded (simple singleton for now, could be improved to switch models)
-             # If we need to switch models, we would check if current model matches requested.
-             # For this MVP, we assume one model is sufficient or we reload.
+        if self.model is not None and self.current_model_name == model_name:
              return self.model
 
         if Qwen3TTSModel is None:
             raise ImportError("qwen_tts package is missing.")
+
+        logger.info(f"Switching model from {self.current_model_name} to {model_name}")
+        
+        # Unload previous model
+        if self.model is not None:
+            del self.model
+            self.model = None
+            if settings.DEVICE == "cuda":
+                torch.cuda.empty_cache()
+            gc.collect()
 
         logger.info(f"Loading Qwen3-TTS model: {model_name} on {settings.DEVICE}")
         
         try:
             # Determine dtype and attention based on device and availability
             dtype = torch.float16 if settings.DEVICE == "cuda" else torch.float32
-            # attn_implementation = "flash_attention_2" if settings.DEVICE == "cuda" else "eager"
-            # Flash attention often requires specific setup, safer to default to standard or let library decide if not strictly required
-            # The docs say: attn_implementation="flash_attention_2"
             
             kwargs = {
                 "device_map": settings.DEVICE,
@@ -48,31 +53,21 @@ class ModelManager:
             }
             
             # Simple check for FA2 availability (simplified)
-            if settings.DEVICE == "cuda":
-                 kwargs["attn_implementation"] = "flash_attention_2"
+            # if settings.DEVICE == "cuda":
+            #      kwargs["attn_implementation"] = "flash_attention_2"
 
             self.model = Qwen3TTSModel.from_pretrained(
                 model_name,
                 **kwargs
             )
+            self.current_model_name = model_name
             logger.info("Model loaded successfully.")
             return self.model
         except Exception as e:
             logger.error(f"Failed to load model: {e}")
-            # Fallback attempts could go here (e.g. disable FA2)
-            if "flash_attention_2" in str(e) or "not support" in str(e):
-                logger.info("Retrying without flash_attention_2...")
-                kwargs.pop("attn_implementation", None)
-                self.model = Qwen3TTSModel.from_pretrained(
-                    model_name,
-                    **kwargs
-                )
-                return self.model
             raise e
 
-    def get_model(self):
-        if self.model is None:
-            return self.load_model()
-        return self.model
+    def get_model(self, model_name: str = settings.MODEL_BASE):
+        return self.load_model(model_name)
 
 model_manager = ModelManager()
