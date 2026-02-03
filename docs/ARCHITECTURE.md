@@ -11,21 +11,30 @@ The application is structured as a Monorepo using **NPM Workspaces**, consisting
 ### Frontend (Client)
 - **Framework**: Vite + React 19 + TypeScript
 - **Styling**: Tailwind CSS v4 + Framer Motion (Animations)
-- **State Management**: Zustand (Chat storage, streaming state)
-- **Icons**: Lucide React
-- **Notifications**: Sonner
+- **State Management**: Zustand (Chat storage, streaming state, App modes)
+- **Modes**:
+  - **Chat**: Standard LLM interaction.
+  - **TTS**: Audio generation studio.
+  - **Image Studio**: Image generation and editing.
+  - **Video Studio**: Video generation.
 
-### Backend (Server)
-- **Runtime**: Node.js + Express
-- **Database**: SQLite (via `better-sqlite3`)
-- **ORM**: Drizzle ORM
-- **AI Integration**: Google Generative AI SDK (`@google/generative-ai`)
-- **API Pattern**: REST + SSE (Server-Sent Events) for streaming
+### Backend (Server & Microservices)
+The backend uses a **Polyglot Microservices** architecture:
+
+1.  **Core API (Node.js)**:
+    -   Port: `5000`
+    -   Responsibilities: Orchestration, Chat Persistence (SQLite), File Uploads, Gemini Integration.
+    -   Stack: Express, Drizzle ORM, Better-SQLite3.
+
+2.  **AI Microservices (Python/FastAPI)**:
+    -   **Audio Service**: Qwen3-TTS / Voice Cloning.
+    -   **Image Service**: Qwen-Image Generation & Editing.
+    -   **Video Service**: LTX-2 Video Generation (Port `8002`).
 
 ### Infrastructure
-- **Monorepo**: Managed via npm workspaces (`client`, `server`)
-- **Configuration**: `.env` for secrets
-- **Storage**: Local filesystem for uploads (`/uploads`)
+- **Monorepo**: Managed via npm workspaces (`client`, `server`) and independent Python service directories.
+- **Storage**: Local filesystem for uploads (`/uploads`).
+- **Communication**: REST APIs (Client communicates directly with Microservices for heavy generation tasks to avoid blocking the core server).
 
 ---
 

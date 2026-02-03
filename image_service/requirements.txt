@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+python-multipart
+torch
+torchvision
+transformers
+accelerate
+pillow
+# Install diffusers from source as per Qwen docs for latest model support
+git+https://github.com/huggingface/diffusers

@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+torch
+soundfile
+python-multipart
+numpy
+pytest
+httpx
+# qwen-tts  <-- Commenting out to allow test environment setup without conflicts for now

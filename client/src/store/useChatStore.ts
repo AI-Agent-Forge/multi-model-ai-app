@@ -2,6 +2,9 @@ import { create } from 'zustand';
 import type { Message, Chat } from '@shared/schema';
 
 interface ChatState {
+    appMode: 'chat' | 'tts' | 'image-studio' | 'video-studio';
+    setAppMode: (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio') => void;
+
     messages: Message[];
     chats: Chat[];
     activeChatId: number | null;
@@ -23,6 +26,11 @@ interface ChatState {
 }
 
 export const useChatStore = create<ChatState>((set) => ({
+    // App Mode
+    appMode: 'chat',
+    setAppMode: (mode) => set({ appMode: mode }),
+
+    // Chat
     messages: [],
     chats: [],
     activeChatId: null,

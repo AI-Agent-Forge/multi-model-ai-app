@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+torch
+diffusers
+transformers
+accelerate
+huggingface_hub
+python-multipart
+numpy
+Pillow
+# Install LTX-2 pipelines directly from GitHub
+git+https://github.com/Lightricks/LTX-2.git#subdirectory=packages/ltx-pipelines
