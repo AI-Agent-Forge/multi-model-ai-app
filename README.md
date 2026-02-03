@@ -55,3 +55,7 @@ This will start:
 
 ## Documentation
 For detailed architecture and data flow, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+
+git config --global user.name "nagagovindarajan" && git config --global user.email "nagagovindarajan@gmail.com"
+Now let's check the diff and commit the changes:

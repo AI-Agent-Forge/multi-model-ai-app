@@ -3,7 +3,7 @@ import io
 import torch
 import numpy as np
 import logging
-from app.core.model import model_manager
+from voice_service.core.model import model_manager
 
 logger = logging.getLogger(__name__)
 

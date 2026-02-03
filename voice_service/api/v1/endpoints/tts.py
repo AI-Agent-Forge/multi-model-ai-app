@@ -3,7 +3,7 @@ from typing import Optional
 import shutil
 import os
 import uuid
-from app.services.audio_service import audio_service
+from voice_service.services.audio_service import audio_service
 
 router = APIRouter()
 

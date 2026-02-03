@@ -1,7 +1,7 @@
 import torch
 import logging
 from typing import Optional, Any
-from app.core.config import settings
+from voice_service.core.config import settings
 
 # Try importing qwen_tts, handle if missing for development/structure purpose
 try:

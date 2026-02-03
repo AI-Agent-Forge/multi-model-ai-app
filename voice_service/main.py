@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from app.api.v1.router import api_router
-from app.core.config import settings
+from voice_service.api.v1.router import api_router
+from voice_service.core.config import settings
 
 app = FastAPI(title=settings.PROJECT_NAME)
 
