@@ -18,3 +18,10 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.get("/")
 def root():
     return {"message": "Welcome to Qwen3-TTS Service", "device": settings.DEVICE}
+
+if __name__ == "__main__":
+    import uvicorn
+    import os
+    port = int(os.environ.get("VOICE_SERVICE_PORT", 5003))
+    uvicorn.run(app, host="0.0.0.0", port=port)
+

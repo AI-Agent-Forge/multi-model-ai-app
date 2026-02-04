@@ -9,5 +9,10 @@ class Settings:
     MODEL_BASE: str = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"
     MODEL_CUSTOM: str = "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
     MODEL_DESIGN: str = "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
+    
+    # Server settings
+    import os
+    PORT: int = int(os.environ.get("VOICE_SERVICE_PORT", 5003))
 
 settings = Settings()
+

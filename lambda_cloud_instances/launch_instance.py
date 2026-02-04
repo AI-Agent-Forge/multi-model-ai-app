@@ -15,6 +15,11 @@ INSTANCE_TYPE = os.getenv("INSTANCE_TYPE", "gpu_1x_a100_sxm4")
 INSTANCE_NAME = os.getenv("INSTANCE_NAME", "llm-finetune-worker")
 IDLE_TIMEOUT = os.getenv("IDLE_TIMEOUT_MINUTES", "30")
 INSTANCE_IMAGE = os.getenv("INSTANCE_IMAGE", "lambda-stack-22-04")
+GITHUB_USERNAME = os.getenv("GITHUB_USERNAME", "your_username")
+GITHUB_EMAIL = os.getenv("GITHUB_EMAIL", "your_email@example.com")
+REPO_URL = os.getenv("REPO_URL", "https://github.com/AI-Agent-Forge/multi-model-ai-app.git")
+GITHUB_TOKEN = os.getenv("GITHUB_TOKEN", "")
+MAIN_BACKEND = os.getenv("MAIN_BACKEND", "voice")
 # ------------------------------
 
 if not API_KEY or API_KEY == "your_api_key_here":
@@ -48,6 +53,99 @@ echo "Installing Google Cloud SDK..."
 curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | sudo gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
 echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" | sudo tee -a /etc/apt/sources.list.d/google-cloud-sdk.list
 apt-get update -q && apt-get install -y google-cloud-cli -q
+
+# 3. Install Node.js (LTS)
+echo "Installing Node.js..."
+curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+apt-get install -y nodejs -q
+
+# 4. Install Gemini CLI
+echo "Installing @google/gemini-cli..."
+npm install -g @google/gemini-cli
+
+# 5. Configure Git
+echo "Configuring Git..."
+sudo -u ubuntu git config --global user.name "{GITHUB_USERNAME}"
+sudo -u ubuntu git config --global user.name "{GITHUB_USERNAME}"
+sudo -u ubuntu git config --global user.email "{GITHUB_EMAIL}"
+if [ ! -z "{GITHUB_TOKEN}" ]; then
+    echo "Configuring GitHub Token..."
+    sudo -u ubuntu git config --global url."https://{GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/"
+fi
+
+# 6. Clone Repository onto persistent storage
+MOUNT_POINT="/home/ubuntu/{FILESYSTEM_NAME}"
+GIT_DIR="$MOUNT_POINT/git"
+REPO_URL="{REPO_URL}"
+REPO_NAME=$(basename "$REPO_URL" .git)
+
+echo "Waiting for $MOUNT_POINT to be mounted..."
+for i in {{1..10}}; do
+    if [ -d "$MOUNT_POINT" ]; then
+        echo "$MOUNT_POINT is mounted."
+        break
+    fi
+    echo "Wait $i/10..."
+    sleep 10
+done
+
+if [ -d "$MOUNT_POINT" ]; then
+    echo "Fixing permissions for $MOUNT_POINT..." >> /var/log/user-data.log
+    chown -R ubuntu:ubuntu "$MOUNT_POINT"
+    
+    mkdir -p "$GIT_DIR"
+    chown ubuntu:ubuntu "$GIT_DIR"
+    
+    cd "$GIT_DIR"
+    if [ ! -d "$REPO_NAME" ]; then
+        echo "Cloning repository..." >> /var/log/user-data.log
+        sudo -u ubuntu git clone "$REPO_URL" >> /var/log/user-data.log 2>&1
+    else
+        echo "Repository already exists at $GIT_DIR/$REPO_NAME." >> /var/log/user-data.log
+        echo "Updating repository..." >> /var/log/user-data.log
+        cd "$REPO_NAME"
+        sudo -u ubuntu git fetch >> /var/log/user-data.log 2>&1
+        sudo -u ubuntu git pull >> /var/log/user-data.log 2>&1
+    fi
+
+    # 7. Install Dependencies
+    echo "Installing Project Dependencies..." >> /var/log/user-data.log
+    cd "$GIT_DIR/$REPO_NAME"
+    
+    echo "Installing Node.js packages..." >> /var/log/user-data.log
+    sudo -u ubuntu npm install >> /var/log/user-data.log 2>&1
+    
+    echo "Creating Python virtual environment..." >> /var/log/user-data.log
+    sudo -u ubuntu python3 -m venv .venv >> /var/log/user-data.log 2>&1
+    
+    echo "Installing Python packages..." >> /var/log/user-data.log
+    
+    # 8. Install Backend-Specific Dependencies
+    MAIN_BACKEND="{MAIN_BACKEND}"
+    echo "Selected Backend: $MAIN_BACKEND" >> /var/log/user-data.log
+    
+    REQ_FILE=""
+    if [ "$MAIN_BACKEND" == "voice" ]; then
+        REQ_FILE="voice_service/requirements.txt"
+    elif [ "$MAIN_BACKEND" == "image" ]; then
+        REQ_FILE="image_service/requirements.txt"
+    elif [ "$MAIN_BACKEND" == "video" ]; then
+        REQ_FILE="video_service/requirements.txt"
+    elif [ "$MAIN_BACKEND" == "llm" ]; then
+        REQ_FILE="llm_service/requirements.txt"
+    fi
+    
+    if [ ! -z "$REQ_FILE" ] && [ -f "$REQ_FILE" ]; then
+        echo "Installing $REQ_FILE for $MAIN_BACKEND service..." >> /var/log/user-data.log
+        sudo -u ubuntu .venv/bin/pip install -r "$REQ_FILE" >> /var/log/user-data.log 2>&1
+    else
+        echo "No specific requirements found for backend: $MAIN_BACKEND (checked $REQ_FILE)" >> /var/log/user-data.log
+    fi
+
+    sudo -u ubuntu .venv/bin/pip install -r requirements.txt >> /var/log/user-data.log 2>&1
+else
+    echo "ERROR: $MOUNT_POINT not found after waiting. Skipping clone/update." >> /var/log/user-data.log
+fi
 
 pip3 install requests
 
@@ -148,7 +246,14 @@ EOF
 systemctl daemon-reload
 systemctl enable auto-shutdown.service
 systemctl start auto-shutdown.service
-echo "--- SETUP COMPLETE ---" >> /var/log/user-data.log"""
+echo "--- SETUP COMPLETE ---" >> /var/log/user-data.log
+echo "Environment check:" >> /var/log/user-data.log
+node -v >> /var/log/user-data.log
+npm -v >> /var/log/user-data.log
+sudo -u ubuntu git config --list >> /var/log/user-data.log
+echo "Repo check:" >> /var/log/user-data.log
+ls -F /home/ubuntu/{FILESYSTEM_NAME}/git/ >> /var/log/user-data.log
+"""
 
 def check_existing_instance():
     print(f"🔍 Checking for existing instance named '{INSTANCE_NAME}'...")
@@ -173,7 +278,49 @@ def check_existing_instance():
     
     return False
 
+def check_and_create_filesystem():
+    print(f"🔍 Checking for filesystem '{FILESYSTEM_NAME}'...")
+    fs_url = "https://cloud.lambdalabs.com/api/v1/file-systems"
+    
+    try:
+        # List filesystems
+        resp = requests.get(fs_url, auth=(API_KEY, ""))
+        if resp.status_code == 200:
+            filesystems = resp.json().get('data', [])
+            for fs in filesystems:
+                if fs.get('name') == FILESYSTEM_NAME:
+                    print(f"✅ Filesystem '{FILESYSTEM_NAME}' found (ID: {fs.get('id')}).")
+                    return True
+        else:
+            print(f"⚠️ Failed to list filesystems. Status: {resp.status_code}")
+            return False
+
+        # Create filesystem if not found
+        print(f"⚠️ Filesystem '{FILESYSTEM_NAME}' not found. Attempting to create in {REGION}...")
+        payload = {
+            "name": FILESYSTEM_NAME,
+            "region_name": REGION
+        }
+        create_resp = requests.post(fs_url, json=payload, auth=(API_KEY, ""))
+        
+        if create_resp.status_code == 200:
+            data = create_resp.json().get('data', {})
+            print(f"✅ Successfully created filesystem '{FILESYSTEM_NAME}' (ID: {data.get('id')}).")
+            return True
+        else:
+            print(f"❌ Failed to create filesystem. Status: {create_resp.status_code}")
+            print(f"Response: {create_resp.text}")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error checking/creating filesystem: {e}")
+        return False
+
 def launch_instance():
+    if not check_and_create_filesystem():
+        print("❌ Aborting launch due to filesystem issues.")
+        return
+
     if check_existing_instance():
         return
 

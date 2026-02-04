@@ -3,7 +3,8 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
-    PORT: int = 8002
+    PORT: int = int(os.environ.get("VIDEO_SERVICE_PORT", 8002))
+
     
     # Model Configuration
     MODEL_PATH: str = os.environ.get("LTX_MODEL_PATH", "Lightricks/LTX-2") # Can be local path or HF repo ID
@@ -16,6 +17,7 @@ class Settings(BaseSettings):
     DEFAULT_FPS: int = 24
     
     class Config:
-        env_file = ".env"
+        env_file = "../.env"
+
 
 settings = Settings()

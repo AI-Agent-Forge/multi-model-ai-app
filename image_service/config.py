@@ -13,7 +13,11 @@ class Settings:
 
     # Server settings
     HOST = "0.0.0.0"
-    PORT = 8000
+    PORT = int(os.environ.get("IMAGE_SERVICE_PORT", 8000))
+
+    class Config:
+        env_file = "../.env"
+
 
     # Output directory
     OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "outputs")
