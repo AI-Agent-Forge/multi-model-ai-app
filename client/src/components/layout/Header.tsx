@@ -20,7 +20,7 @@ export const Header: React.FC = () => {
 
     const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
 
-    const handleModeSelect = (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio') => {
+    const handleModeSelect = (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat') => {
         setAppMode(mode);
         setIsDropdownOpen(false);
     };
@@ -54,10 +54,15 @@ export const Header: React.FC = () => {
                             <Palette size={16} className="text-green-400" />
                             <span>Image Studio</span>
                         </>
-                    ) : (
+                    ) : appMode === 'video-studio' ? (
                         <>
                             <Clapperboard size={16} className="text-pink-500" />
                             <span>Video Studio</span>
+                        </>
+                    ) : (
+                        <>
+                            <MessageSquare size={16} className="text-orange-400" />
+                            <span>Qwen Chat</span>
                         </>
                     )}
                     <ChevronDown size={14} className={`text-zinc-500 transition-transform group-hover:text-zinc-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -97,6 +102,14 @@ export const Header: React.FC = () => {
                             >
                                 <Clapperboard size={16} className={appMode === 'video-studio' ? 'text-pink-500' : 'text-zinc-500'} />
                                 Video Studio
+                            </button>
+                            <button
+                                onClick={() => handleModeSelect('qwen-chat')}
+                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${appMode === 'qwen-chat' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+                                    }`}
+                            >
+                                <MessageSquare size={16} className={appMode === 'qwen-chat' ? 'text-orange-400' : 'text-zinc-500'} />
+                                Qwen Chat
                             </button>
                         </div>
                     </div>

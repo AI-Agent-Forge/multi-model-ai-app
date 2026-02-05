@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import type { Message, Chat } from '@shared/schema';
 
 interface ChatState {
-    appMode: 'chat' | 'tts' | 'image-studio' | 'video-studio';
-    setAppMode: (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio') => void;
+    appMode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat';
+    setAppMode: (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat') => void;
 
     messages: Message[];
     chats: Chat[];

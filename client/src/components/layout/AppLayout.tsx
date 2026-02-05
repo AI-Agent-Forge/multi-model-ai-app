@@ -8,6 +8,7 @@ import { useChatStore } from '@/store/useChatStore';
 import { QwenTTSLayout } from '../tts/QwenTTSLayout';
 import { ImageStudioLayout } from '../image-studio/ImageStudioLayout';
 import { VideoStudioLayout } from '../video/VideoStudioLayout';
+import { QwenChatLayout } from '../qwen/QwenChatLayout';
 
 export const AppLayout: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -52,8 +53,10 @@ export const AppLayout: React.FC = () => {
                         <QwenTTSLayout />
                     ) : appMode === 'image-studio' ? (
                         <ImageStudioLayout />
-                    ) : (
+                    ) : appMode === 'video-studio' ? (
                         <VideoStudioLayout />
+                    ) : (
+                        <QwenChatLayout />
                     )}
                 </div>
             </main>

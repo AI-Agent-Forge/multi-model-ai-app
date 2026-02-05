@@ -278,7 +278,7 @@ def check_existing_instance():
     
     return False
 
-def check_and_create_filesystem():
+def check_filesystem():
     print(f"🔍 Checking for filesystem '{FILESYSTEM_NAME}'...")
     fs_url = "https://cloud.lambdalabs.com/api/v1/file-systems"
     
@@ -296,29 +296,18 @@ def check_and_create_filesystem():
             return False
 
         # Create filesystem if not found
-        print(f"⚠️ Filesystem '{FILESYSTEM_NAME}' not found. Attempting to create in {REGION}...")
-        payload = {
-            "name": FILESYSTEM_NAME,
-            "region_name": REGION
-        }
-        create_resp = requests.post(fs_url, json=payload, auth=(API_KEY, ""))
-        
-        if create_resp.status_code == 200:
-            data = create_resp.json().get('data', {})
-            print(f"✅ Successfully created filesystem '{FILESYSTEM_NAME}' (ID: {data.get('id')}).")
-            return True
-        else:
-            print(f"❌ Failed to create filesystem. Status: {create_resp.status_code}")
-            print(f"Response: {create_resp.text}")
-            return False
+        print(f"❌ Filesystem '{FILESYSTEM_NAME}' not found in region {REGION}.")
+        print("   Automatic creation via API is not supported.")
+        print("   Please create it manually here: https://cloud.lambdalabs.com/filesystems")
+        return False
             
     except Exception as e:
-        print(f"❌ Error checking/creating filesystem: {e}")
+        print(f"❌ Error checking filesystem: {e}")
         return False
 
 def launch_instance():
-    if not check_and_create_filesystem():
-        print("❌ Aborting launch due to filesystem issues.")
+    if not check_filesystem():
+        print("❌ Aborting launch due to missing filesystem.")
         return
 
     if check_existing_instance():
