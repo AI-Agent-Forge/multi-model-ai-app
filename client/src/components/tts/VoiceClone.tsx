@@ -109,7 +109,7 @@ export const VoiceClone: React.FC = () => {
             formData.append('ref_audio', selectedFile);
             formData.append('language', 'English');
 
-            const response = await fetch('http://localhost:8001/api/v1/tts/clone', {
+            const response = await fetch('http://localhost:5003/api/v1/tts/clone', {
                 method: 'POST',
                 body: formData,
             });
