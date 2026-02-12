@@ -18,6 +18,8 @@ class ContentItem(BaseModel):
 class Message(BaseModel):
     role: str
     content: Union[str, List[ContentItem]]
+    # Accept non-standard payload field used by tests
+    image: Optional[str] = None
 
 class ChatCompletionRequest(BaseModel):
     model: str
