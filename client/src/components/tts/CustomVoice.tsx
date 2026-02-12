@@ -20,7 +20,7 @@ export const CustomVoice: React.FC = () => {
             formData.append('speaker', speaker);
             formData.append('language', 'English');
 
-            const response = await fetch('http://localhost:8001/api/v1/tts/custom', {
+            const response = await fetch('http://localhost:5003/api/v1/tts/custom', {
                 method: 'POST',
                 body: formData,
             });

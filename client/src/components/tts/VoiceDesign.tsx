@@ -16,7 +16,7 @@ export const VoiceDesign: React.FC = () => {
             formData.append('instruct', instruct);
             formData.append('language', 'English'); // Hardcoded for now, can be state
 
-            const response = await fetch('http://localhost:8001/api/v1/tts/design', {
+            const response = await fetch('http://localhost:5003/api/v1/tts/design', {
                 method: 'POST',
                 body: formData,
             });
