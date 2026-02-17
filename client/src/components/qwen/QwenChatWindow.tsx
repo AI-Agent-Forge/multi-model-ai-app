@@ -38,7 +38,7 @@ export const QwenChatWindow: React.FC = () => {
         try {
             // Construct payload compatible with our microservice
             const payload = {
-                model: "Qwen/Qwen3-VL-32B-Thinking",
+                model: "Qwen/Qwen2.5-14B-Instruct",
                 messages: [
                     ...messages.map(m => {
                         if (m.image) {
@@ -99,7 +99,7 @@ export const QwenChatWindow: React.FC = () => {
             {/* Header / Title */}
             <div className="py-4 border-b border-white/5 mb-4 flex items-center gap-2">
                 <Sparkles className="text-orange-400" size={20} />
-                <h2 className="text-lg font-semibold text-white">Qwen3-VL-32B (Direct API)</h2>
+                <h2 className="text-lg font-semibold text-white">Qwen2.5-14B-Instruct (Direct API)</h2>
             </div>
 
             {/* Messages Area */}
