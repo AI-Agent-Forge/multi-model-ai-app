@@ -12,7 +12,7 @@ class Settings:
     
     # Server settings
     import os
-    PORT: int = int(os.environ.get("VOICE_SERVICE_PORT", 5003))
+    PORT: int = int(os.environ.get("VOICE_SERVICE_PORT", 5004))
 
 settings = Settings()
 
