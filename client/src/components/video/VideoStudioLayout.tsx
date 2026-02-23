@@ -11,9 +11,9 @@ export const VideoStudioLayout: React.FC = () => {
     const [generatedVideo, setGeneratedVideo] = useState<string | null>(null);
     const [showEnhance, setShowEnhance] = useState(false);
 
-    // Settings (hidden by default)
-    const [width] = useState(768);
-    const [height] = useState(512);
+    // Settings (conservative defaults for 40GB VRAM with FP8 quantization)
+    const [width] = useState(512);
+    const [height] = useState(384);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
