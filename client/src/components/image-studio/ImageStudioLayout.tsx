@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { ImageGenerator } from './ImageGenerator';
 import { ImageEditor } from './ImageEditor';
-import { Palette, Wand2 } from 'lucide-react';
+
+import { Palette, Wand2, Layers } from 'lucide-react';
+import { LayeredEditor } from './LayeredEditor';
 
 export const ImageStudioLayout: React.FC = () => {
-    const [activeTab, setActiveTab] = useState<'generation' | 'editing'>('generation');
+    const [activeTab, setActiveTab] = useState<'generation' | 'editing' | 'layered'>('generation');
 
     return (
         <div className="flex flex-col h-full bg-black text-white">
@@ -32,11 +34,28 @@ export const ImageStudioLayout: React.FC = () => {
                         <div className="absolute bottom-[-17px] left-0 right-0 h-0.5 bg-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.5)]" />
                     )}
                 </button>
+                <button
+                    onClick={() => setActiveTab('layered')}
+                    className={`flex items-center gap-2 pb-2 text-sm font-medium transition-all relative ${activeTab === 'layered' ? 'text-indigo-400' : 'text-zinc-400 hover:text-white'
+                        }`}
+                >
+                    <Layers size={18} />
+                    Layered Editing
+                    {activeTab === 'layered' && (
+                        <div className="absolute bottom-[-17px] left-0 right-0 h-0.5 bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.5)]" />
+                    )}
+                </button>
             </div>
 
             {/* Content Area */}
             <div className="flex-1 overflow-hidden">
-                {activeTab === 'generation' ? <ImageGenerator /> : <ImageEditor />}
+                {activeTab === 'generation' ? (
+                    <ImageGenerator />
+                ) : activeTab === 'editing' ? (
+                    <ImageEditor />
+                ) : (
+                    <LayeredEditor />
+                )}
             </div>
         </div>
     );
