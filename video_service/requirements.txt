@@ -1,6 +1,6 @@
 fastapi
-uvicorn
-torch
+uvicorn[standard]
+torch>=2.0.0
 diffusers
 transformers
 accelerate
@@ -8,5 +8,10 @@ huggingface_hub
 python-multipart
 numpy
 Pillow
-# Install LTX-2 pipelines directly from GitHub
-git+https://github.com/Lightricks/LTX-2.git#subdirectory=packages/ltx-pipelines
+pydantic-settings
+# PyAV for video encoding/decoding
+av
+# Install LTX-2 packages pinned to a specific commit for reproducibility
+git+https://github.com/Lightricks/LTX-2.git@28c3c73fe557666c3de176e1e50a5220152ccfca#subdirectory=packages/ltx-core
+git+https://github.com/Lightricks/LTX-2.git@28c3c73fe557666c3de176e1e50a5220152ccfca#subdirectory=packages/ltx-pipelines
+
