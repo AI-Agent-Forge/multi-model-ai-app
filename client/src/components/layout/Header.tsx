@@ -1,6 +1,6 @@
 import React from 'react';
 import { useChatStore } from '@/store/useChatStore';
-import { MessageSquare, Mic, ChevronDown, Palette, Clapperboard } from 'lucide-react';
+import { MessageSquare, Mic, ChevronDown, Palette, Clapperboard, Activity } from 'lucide-react';
 
 export const Header: React.FC = () => {
     const { appMode, setAppMode } = useChatStore();
@@ -20,7 +20,7 @@ export const Header: React.FC = () => {
 
     const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
 
-    const handleModeSelect = (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat') => {
+    const handleModeSelect = (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat' | 'qwen-omni') => {
         setAppMode(mode);
         setIsDropdownOpen(false);
     };
@@ -59,10 +59,15 @@ export const Header: React.FC = () => {
                             <Clapperboard size={16} className="text-pink-500" />
                             <span>Video Studio</span>
                         </>
-                    ) : (
+                    ) : appMode === 'qwen-chat' ? (
                         <>
                             <MessageSquare size={16} className="text-orange-400" />
                             <span>Qwen Chat</span>
+                        </>
+                    ) : (
+                        <>
+                            <Activity size={16} className="text-red-400" />
+                            <span>Qwen Omni</span>
                         </>
                     )}
                     <ChevronDown size={14} className={`text-zinc-500 transition-transform group-hover:text-zinc-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
@@ -110,6 +115,14 @@ export const Header: React.FC = () => {
                             >
                                 <MessageSquare size={16} className={appMode === 'qwen-chat' ? 'text-orange-400' : 'text-zinc-500'} />
                                 Qwen Chat
+                            </button>
+                            <button
+                                onClick={() => handleModeSelect('qwen-omni')}
+                                className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${appMode === 'qwen-omni' ? 'bg-zinc-800 text-white' : 'text-zinc-400 hover:bg-zinc-800/50 hover:text-white'
+                                    }`}
+                            >
+                                <Activity size={16} className={appMode === 'qwen-omni' ? 'text-red-400' : 'text-zinc-500'} />
+                                Qwen Omni
                             </button>
                         </div>
                     </div>

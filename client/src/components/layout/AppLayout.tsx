@@ -9,6 +9,7 @@ import { QwenTTSLayout } from '../tts/QwenTTSLayout';
 import { ImageStudioLayout } from '../image-studio/ImageStudioLayout';
 import { VideoStudioLayout } from '../video/VideoStudioLayout';
 import { QwenChatLayout } from '../qwen/QwenChatLayout';
+import { QwenOmniLayout } from '../qwen/QwenOmniLayout';
 
 export const AppLayout: React.FC = () => {
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -55,6 +56,8 @@ export const AppLayout: React.FC = () => {
                         <ImageStudioLayout />
                     ) : appMode === 'video-studio' ? (
                         <VideoStudioLayout />
+                    ) : appMode === 'qwen-omni' ? (
+                        <QwenOmniLayout />
                     ) : (
                         <QwenChatLayout />
                     )}

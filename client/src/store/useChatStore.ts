@@ -2,8 +2,8 @@ import { create } from 'zustand';
 import type { Message, Chat } from '@shared/schema';
 
 interface ChatState {
-    appMode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat';
-    setAppMode: (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat') => void;
+    appMode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat' | 'qwen-omni';
+    setAppMode: (mode: 'chat' | 'tts' | 'image-studio' | 'video-studio' | 'qwen-chat' | 'qwen-omni') => void;
 
     messages: Message[];
     chats: Chat[];
@@ -56,7 +56,7 @@ export const useChatStore = create<ChatState>((set) => ({
 
     loadChats: async () => {
         try {
-            const res = await fetch('http://localhost:5000/api/chat');
+            const res = await fetch('/api/chat');
             if (res.ok) {
                 const chats = await res.json();
                 set({ chats });
@@ -69,7 +69,7 @@ export const useChatStore = create<ChatState>((set) => ({
     selectChat: async (chatId) => {
         set({ activeChatId: chatId, isLoading: true });
         try {
-            const res = await fetch(`http://localhost:5000/api/chat/${chatId}`);
+            const res = await fetch(`/api/chat/${chatId}`);
             if (res.ok) {
                 const messages = await res.json();
                 set({ messages, isLoading: false });
