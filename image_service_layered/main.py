@@ -33,5 +33,18 @@ app.include_router(api_router)
 def root():
     return {"message": "Welcome to Qwen Layered Image Service", "device": settings.DEVICE}
 
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "details": {
+            "service": "Qwen Layered Image Service",
+            "device": settings.DEVICE,
+            "layered_model": settings.LAYERED_MODEL_ID,
+            "edit_model": settings.EDIT_MODEL_ID,
+            "models_loaded": model_manager.layered_pipe is not None and model_manager.edit_pipe is not None
+        }
+    }
+
 if __name__ == "__main__":
     uvicorn.run("image_service_layered.main:app", host=settings.HOST, port=settings.PORT, reload=True)
