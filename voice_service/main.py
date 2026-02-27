@@ -21,6 +21,10 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "service": "voice_service"}
+
 @app.get("/")
 def root():
     return {"message": "Welcome to Qwen3-TTS Service", "device": settings.DEVICE}

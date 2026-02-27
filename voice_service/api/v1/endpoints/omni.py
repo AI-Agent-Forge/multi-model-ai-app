@@ -8,6 +8,7 @@ from typing import Optional
 
 from voice_service.services.stt_service import stt_service
 from voice_service.services.audio_service import audio_service
+from voice_service.core.config import settings
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ async def omni_chat(
     request: Request,
     text: Optional[str] = Form(None),
     audio: Optional[UploadFile] = File(None),
-    language: str = Form("English")
+    language: str = Form(settings.DEFAULT_LANGUAGE)
 ):
     if not text and not audio:
         raise HTTPException(status_code=400, detail="Either text or audio must be provided")
@@ -32,7 +33,6 @@ async def omni_chat(
                 shutil.copyfileobj(audio.file, buffer)
             
             transcription = stt_service.transcribe(temp_filename)
-            logger.info(f"Transcribed: {transcription}")
             if not user_text:
                 user_text = transcription
             else:
@@ -52,7 +52,6 @@ async def omni_chat(
         model = request.app.state.qwen_model
         # Simple prompt wrapping
         response_text = model.generate(user_text)
-        logger.info(f"LLM Response: {response_text}")
     except Exception as e:
         logger.error(f"LLM Error: {e}")
         raise HTTPException(status_code=500, detail=f"LLM Error: {str(e)}")
@@ -69,7 +68,7 @@ async def omni_chat(
         
         audio_buffer = audio_service.generate_design(
             text=response_text,
-            instruct="A helpful and friendly AI assistant.",
+            instruct=settings.DEFAULT_VOICE_INSTRUCTION,
             language=language
         )
 

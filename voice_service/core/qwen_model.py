@@ -1,9 +1,10 @@
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
+from voice_service.core.config import settings
 
 class QwenModel:
     def __init__(self):
-        self.model_name = "Qwen/Qwen2.5-7B-Instruct"
+        self.model_name = settings.QWEN_LLM_MODEL_ID
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
         self.model = AutoModelForCausalLM.from_pretrained(
@@ -14,7 +15,7 @@ class QwenModel:
 
     def generate(self, prompt, max_tokens=200, temperature=0.7):
         messages = [
-            {"role": "system", "content": "You are a helpful AI assistant."},
+            {"role": "system", "content": settings.DEFAULT_SYSTEM_PROMPT},
             {"role": "user", "content": prompt}
         ]
 

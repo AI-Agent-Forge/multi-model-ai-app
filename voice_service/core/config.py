@@ -10,6 +10,14 @@ class Settings:
     MODEL_CUSTOM: str = "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
     MODEL_DESIGN: str = "Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign"
     
+    # Qwen LLM settings
+    QWEN_LLM_MODEL_ID: str = "Qwen/Qwen2.5-7B-Instruct"
+    DEFAULT_SYSTEM_PROMPT: str = "You are a helpful AI assistant."
+
+    # Voice settings
+    DEFAULT_LANGUAGE: str = "English"
+    DEFAULT_VOICE_INSTRUCTION: str = "A helpful and friendly AI assistant."
+
     # Server settings
     import os
     PORT: int = int(os.environ.get("VOICE_SERVICE_PORT", 5004))
