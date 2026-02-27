@@ -10,12 +10,15 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 
 # Mock ltx_pipelines and ltx_core before importing main
 sys.modules["ltx_pipelines"] = MagicMock()
+sys.modules["ltx_pipelines.ti2vid_one_stage"] = MagicMock()
 sys.modules["ltx_pipelines.utils"] = MagicMock()
 sys.modules["ltx_pipelines.utils.media_io"] = MagicMock()
+sys.modules["ltx_pipelines.utils.constants"] = MagicMock()
 sys.modules["ltx_core"] = MagicMock()
 sys.modules["ltx_core.components"] = MagicMock()
 sys.modules["ltx_core.components.guiders"] = MagicMock()
 sys.modules["ltx_core.loader"] = MagicMock()
+sys.modules["ltx_core.quantization"] = MagicMock()
 
 from video_service.main import app
 
@@ -23,7 +26,7 @@ client = TestClient(app)
 
 @pytest.fixture
 def mock_pipeline():
-    with patch("video_service.main.TI2VidTwoStagesPipeline") as mock_cls:
+    with patch("video_service.main.TI2VidOneStagePipeline") as mock_cls:
         # Mock the pipeline instance
         pipeline_instance = MagicMock()
         

@@ -268,7 +268,7 @@ curl -X POST http://localhost:8002/generate \
 ### Common Issues
 
 1. **"ltx-pipelines not found"**
-   - Run: `pip install git+https://github.com/Lightricks/LTX-2.git#subdirectory=packages/ltx-pipelines`
+   - Run: `pip install git+https://github.com/Lightricks/LTX-2.git@28c3c73fe557666c3de176e1e50a5220152ccfca#subdirectory=packages/ltx-pipelines`
 
 2. **"CUDA out of memory"**
    - Export: `PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True`

@@ -59,9 +59,10 @@ def load_model():
         return
 
     # Set HF token in environment for model downloads
-    if settings.HF_TOKEN:
-        os.environ["HUGGING_FACE_HUB_TOKEN"] = settings.HF_TOKEN
-        os.environ["HF_TOKEN"] = settings.HF_TOKEN
+    hf_token = settings.effective_hf_token
+    if hf_token:
+        os.environ["HUGGING_FACE_HUB_TOKEN"] = hf_token
+        os.environ["HF_TOKEN"] = hf_token
         logger.info("Hugging Face token configured")
 
     logger.info("=" * 60)
@@ -130,6 +131,21 @@ app.add_middleware(
 )
 
 
+def _cleanup_old_outputs(output_dir: Path, max_files: int) -> None:
+    """Remove the oldest files when the output directory exceeds max_files."""
+    if max_files <= 0:
+        return
+    mp4_files = sorted(output_dir.glob("*.mp4"), key=lambda p: p.stat().st_mtime)
+    files_to_remove = len(mp4_files) - max_files
+    if files_to_remove > 0:
+        for f in mp4_files[:files_to_remove]:
+            try:
+                f.unlink()
+                logger.info(f"Cleaned up old output: {f.name}")
+            except OSError as e:
+                logger.warning(f"Failed to remove {f.name}: {e}")
+
+
 def save_generation_result(decoded_video, decoded_audio, fps: int) -> dict:
     """Save generated video and return response dict with base64 MP4."""
     request_id = str(uuid.uuid4())
@@ -153,6 +169,9 @@ def save_generation_result(decoded_video, decoded_audio, fps: int) -> dict:
     with open(output_mp4_path, "rb") as video_file:
         video_bytes = video_file.read()
         video_str = base64.b64encode(video_bytes).decode("utf-8")
+
+    # Enforce retention limit to prevent unbounded disk usage
+    _cleanup_old_outputs(base_output_dir, settings.MAX_OUTPUT_FILES)
 
     return {
         "success": True,
@@ -244,33 +263,37 @@ async def image_to_video(
         input_image = Image.open(io.BytesIO(contents)).convert("RGB")
         input_image.save(input_image_path)
 
-        with torch.no_grad():
-            try:
-                decoded_video, decoded_audio = video_pipe(
-                    prompt=prompt,
-                    negative_prompt=DEFAULT_NEGATIVE_PROMPT,
-                    seed=seed,
-                    height=height,
-                    width=width,
-                    num_frames=num_frames,
-                    frame_rate=settings.DEFAULT_FPS,
-                    num_inference_steps=40,
-                    video_guider_params=DEFAULT_VIDEO_GUIDER_PARAMS,
-                    audio_guider_params=DEFAULT_AUDIO_GUIDER_PARAMS,
-                    images=[(str(input_image_path), 0, 1.0)],
-                )
-            except RuntimeError as e:
-                if "out of memory" in str(e).lower():
-                    torch.cuda.empty_cache()
-                    logger.error(f"CUDA Out of Memory: {e}")
-                    raise HTTPException(
-                        status_code=507,
-                        detail="GPU out of memory. Try reducing resolution or frames.",
+        try:
+            with torch.no_grad():
+                try:
+                    decoded_video, decoded_audio = video_pipe(
+                        prompt=prompt,
+                        negative_prompt=DEFAULT_NEGATIVE_PROMPT,
+                        seed=seed,
+                        height=height,
+                        width=width,
+                        num_frames=num_frames,
+                        frame_rate=settings.DEFAULT_FPS,
+                        num_inference_steps=40,
+                        video_guider_params=DEFAULT_VIDEO_GUIDER_PARAMS,
+                        audio_guider_params=DEFAULT_AUDIO_GUIDER_PARAMS,
+                        images=[(str(input_image_path), 0, 1.0)],
                     )
-                raise
+                except RuntimeError as e:
+                    if "out of memory" in str(e).lower():
+                        torch.cuda.empty_cache()
+                        logger.error(f"CUDA Out of Memory: {e}")
+                        raise HTTPException(
+                            status_code=507,
+                            detail="GPU out of memory. Try reducing resolution or frames.",
+                        )
+                    raise
 
-            os.remove(input_image_path)
-            result = save_generation_result(decoded_video, decoded_audio, settings.DEFAULT_FPS)
+                result = save_generation_result(decoded_video, decoded_audio, settings.DEFAULT_FPS)
+        finally:
+            # Always clean up the temp file, even on failure
+            if input_image_path.exists():
+                input_image_path.unlink()
 
         logger.info("Image-to-video generation completed successfully")
         return JSONResponse(content=result)

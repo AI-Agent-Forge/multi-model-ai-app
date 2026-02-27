@@ -31,7 +31,7 @@ pip install -r requirements.txt
 
 2) Install the LTX-2 pipelines package (this may take a while and downloads large models):
 ```bash
-pip install "git+https://github.com/Lightricks/LTX-2.git#subdirectory=packages/ltx-pipelines"
+pip install "git+https://github.com/Lightricks/LTX-2.git@28c3c73fe557666c3de176e1e50a5220152ccfca#subdirectory=packages/ltx-pipelines"
 ```
 
 3) (Optional) Pre-download or set model paths. The service will try to download from Hugging Face if you don't provide local paths. To set env vars, create a `.env` or export manually, e.g.:

@@ -11,7 +11,7 @@ Pillow
 pydantic-settings
 # PyAV for video encoding/decoding
 av
-# Install LTX-2 packages directly from GitHub (core + pipelines)
-git+https://github.com/Lightricks/LTX-2.git#subdirectory=packages/ltx-core
-git+https://github.com/Lightricks/LTX-2.git#subdirectory=packages/ltx-pipelines
+# Install LTX-2 packages pinned to a specific commit for reproducibility
+git+https://github.com/Lightricks/LTX-2.git@28c3c73fe557666c3de176e1e50a5220152ccfca#subdirectory=packages/ltx-core
+git+https://github.com/Lightricks/LTX-2.git@28c3c73fe557666c3de176e1e50a5220152ccfca#subdirectory=packages/ltx-pipelines
 

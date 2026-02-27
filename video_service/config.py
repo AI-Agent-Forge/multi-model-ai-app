@@ -7,22 +7,28 @@ class Settings(BaseSettings):
     HOST: str = "0.0.0.0"
     PORT: int = 8002
     
-    # Hugging Face Token
+    # Hugging Face Token (set either one — the service will use whichever is provided)
     HF_TOKEN: str = ""
     HUGGING_FACE_HUB_TOKEN: str = ""
+
+    @property
+    def effective_hf_token(self) -> str:
+        """Return whichever HF token is set, preferring HF_TOKEN."""
+        return self.HF_TOKEN or self.HUGGING_FACE_HUB_TOKEN
     
-    # Model Configuration — absolute paths to local model files
-    LTX_MODEL_PATH: str = "/home/ubuntu/abi-video-disk/git/multi-model-ai-app/models/ltx2/ltx-2-19b-distilled-fp8.safetensors"
+    # Model Configuration — use env vars or HuggingFace repo IDs as defaults.
+    # Override via .env or environment variables for local paths.
+    LTX_MODEL_PATH: str = "Lightricks/LTX-2"
     
     # Spatial upsampler for 2x resolution increase (required for two-stage pipeline)
-    LTX_SPATIAL_UPSAMPLER_PATH: str = "/home/ubuntu/abi-video-disk/git/multi-model-ai-app/models/ltx2/ltx-2-spatial-upscaler-x2-1.0.safetensors"
+    LTX_SPATIAL_UPSAMPLER_PATH: str = ""
     
     # Distilled LoRA for stage 2 refinement (required for two-stage pipeline)
-    LTX_DISTILLED_LORA_PATH: str = "/home/ubuntu/abi-video-disk/git/multi-model-ai-app/models/ltx2/ltx-2-19b-distilled-lora-384.safetensors"
+    LTX_DISTILLED_LORA_PATH: str = ""
     LTX_DISTILLED_LORA_STRENGTH: float = 0.8
     
-    # Gemma text encoder path (required)
-    GEMMA_ROOT: str = "/home/ubuntu/abi-video-disk/git/multi-model-ai-app/models/gemma"
+    # Gemma text encoder path (required — HuggingFace repo ID or local path)
+    GEMMA_ROOT: str = "google/gemma-3-12b-it-qat-q4_0-unquantized"
     
     # Device configuration
     DEVICE: str = "cuda" if torch.cuda.is_available() else "cpu"
@@ -32,6 +38,11 @@ class Settings(BaseSettings):
     DEFAULT_HEIGHT: int = 384
     DEFAULT_NUM_FRAMES: int = 65
     DEFAULT_FPS: int = 24
+
+    # Output retention — maximum number of generated videos to keep on disk.
+    # Set to 0 to disable retention (files are never cleaned up automatically).
+    MAX_OUTPUT_FILES: int = 50
+
     # Quantization options: '', 'fp8-cast', 'fp8-scaled-mm'
     # fp8-cast: keeps transformer weights in FP8 (~26GB) instead of bf16 (~52GB)
     # REQUIRED for 40GB VRAM GPUs with the 19B model

@@ -150,9 +150,9 @@ else:
 
 ### Issue: "ltx-pipelines not found"
 
-**Solution**: Install from source:
+**Solution**: Install from source (pinned to a known-good commit):
 ```bash
-pip install git+https://github.com/Lightricks/LTX-2.git#subdirectory=packages/ltx-pipelines
+pip install git+https://github.com/Lightricks/LTX-2.git@28c3c73fe557666c3de176e1e50a5220152ccfca#subdirectory=packages/ltx-pipelines
 ```
 
 ### Issue: "CUDA out of memory"
