@@ -22,6 +22,6 @@ def root():
 if __name__ == "__main__":
     import uvicorn
     import os
-    port = int(os.environ.get("VOICE_SERVICE_PORT", 5003))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    uvicorn.run("voice_service.main:app", host="0.0.0.0", port=settings.PORT, reload=True)
+    #uvicorn.run(app, host="0.0.0.0", port=port)
 

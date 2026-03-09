@@ -156,3 +156,7 @@ htmlcov/
 venv/
 ENV/
 env/
+
+# Large files and environments
+qwen_env/
+Miniconda3-latest-Linux-x86_64.sh

@@ -47,10 +47,10 @@ class ModelManager:
             # Determine dtype and attention based on device and availability
             dtype = torch.float16 if settings.DEVICE == "cuda" else torch.float32
             
-            kwargs = {
-                "device_map": settings.DEVICE,
-                "dtype": dtype
-            }
+            model_kwargs = {
+    "attn_implementation": "eager"
+}
+
             
             # Simple check for FA2 availability (simplified)
             # if settings.DEVICE == "cuda":
@@ -58,7 +58,7 @@ class ModelManager:
 
             self.model = Qwen3TTSModel.from_pretrained(
                 model_name,
-                **kwargs
+                **model_kwargs
             )
             self.current_model_name = model_name
             logger.info("Model loaded successfully.")

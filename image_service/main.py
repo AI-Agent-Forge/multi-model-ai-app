@@ -9,7 +9,7 @@ from diffusers import QwenImagePipeline, QwenImageEditPlusPipeline
 import uvicorn
 from contextlib import asynccontextmanager
 
-from .config import settings
+from config import settings
 
 # Global variables to hold models
 txt2img_pipe = None
@@ -29,8 +29,19 @@ async def lifespan(app: FastAPI):
     try:
         txt2img_pipe = QwenImagePipeline.from_pretrained(
             settings.TEXT_TO_IMAGE_MODEL_ID,
-            torch_dtype=settings.TORCH_DTYPE
-        ).to(settings.DEVICE)
+            torch_dtype=settings.TORCH_DTYPE,
+            device_map=None
+        )
+        # Enable sequential cpu offload to save memory (slower but necessary for large models)
+        if hasattr(txt2img_pipe, "enable_sequential_cpu_offload"):
+             txt2img_pipe.enable_sequential_cpu_offload()
+        elif hasattr(txt2img_pipe, "enable_model_cpu_offload"):
+             txt2img_pipe.enable_model_cpu_offload()
+
+        # Enable attention slicing for inference memory
+        if hasattr(txt2img_pipe, "enable_attention_slicing"):
+             txt2img_pipe.enable_attention_slicing()
+             
         print("Text-to-Image model loaded successfully.")
     except Exception as e:
         print(f"Failed to load Text-to-Image model: {e}")
@@ -39,8 +50,19 @@ async def lifespan(app: FastAPI):
     try:
         edit_pipe = QwenImageEditPlusPipeline.from_pretrained(
             settings.IMAGE_EDIT_MODEL_ID,
-            torch_dtype=settings.TORCH_DTYPE
-        ).to(settings.DEVICE)
+            torch_dtype=settings.TORCH_DTYPE,
+            device_map=None
+        )
+        # Enable sequential cpu offload to save memory (slower but necessary for large models)
+        if hasattr(edit_pipe, "enable_sequential_cpu_offload"):
+             edit_pipe.enable_sequential_cpu_offload()
+        elif hasattr(edit_pipe, "enable_model_cpu_offload"):
+             edit_pipe.enable_model_cpu_offload()
+
+        # Enable attention slicing for inference memory
+        if hasattr(edit_pipe, "enable_attention_slicing"):
+             edit_pipe.enable_attention_slicing()
+             
         # Enable progress bar
         edit_pipe.set_progress_bar_config(disable=None)
         print("Image-Edit model loaded successfully.")
@@ -80,6 +102,10 @@ class GenerateRequest(BaseModel):
 
 @app.post("/generate")
 async def generate_image(req: GenerateRequest):
+    # Ensure memory is clean before starting
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+        
     global txt2img_pipe
     if txt2img_pipe is None:
         raise HTTPException(status_code=503, detail="Text-to-Image model not loaded.")
@@ -129,6 +155,10 @@ async def edit_image(
     guidance_scale: float = Form(4.0), # true_cfg_scale
     seed: int = Form(42)
 ):
+    # Ensure memory is clean before starting
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+
     global edit_pipe
     if edit_pipe is None:
         raise HTTPException(status_code=503, detail="Image-Edit model not loaded.")
