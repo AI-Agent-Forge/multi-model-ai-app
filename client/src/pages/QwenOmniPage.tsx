@@ -16,10 +16,13 @@ export const QwenOmniPage: React.FC = () => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [uploadFile, setUploadFile] = useState<File | null>(null);
 
+    // WebSocket state
+    const wsRef = useRef<WebSocket | null>(null);
+    const [wsStatus, setWsStatus] = useState<'disconnected' | 'connecting' | 'connected'>('disconnected');
+
     // Refs
     const bottomRef = useRef<HTMLDivElement>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-    const audioChunksRef = useRef<Blob[]>([]);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const createdUrlsRef = useRef<string[]>([]);
 
@@ -28,36 +31,126 @@ export const QwenOmniPage: React.FC = () => {
         bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isProcessing]);
 
-    // Cleanup audio/image URLs on unmount
+    // WebSocket connection logic
     useEffect(() => {
+        let reconnectTimeout: number;
+
+        const connectWs = () => {
+            setWsStatus('connecting');
+            const socket = new WebSocket('ws://localhost:5004/api/v1/omni/ws/chat');
+
+            socket.onopen = () => {
+                setWsStatus('connected');
+                wsRef.current = socket;
+            };
+
+            socket.onmessage = async (event) => {
+                if (event.data instanceof Blob) {
+                    // Audio response
+                    const audioUrl = URL.createObjectURL(event.data);
+                    createdUrlsRef.current.push(audioUrl);
+
+                    setMessages(prev => {
+                        const newMessages = [...prev];
+                        const lastMsg = newMessages[newMessages.length - 1];
+                        if (lastMsg && lastMsg.role === 'assistant' && lastMsg.content !== '🗣️ (Voice Response)') {
+                            newMessages[newMessages.length - 1] = { ...lastMsg, audioUrl };
+                            return newMessages;
+                        } else {
+                            return [...newMessages, {
+                                role: 'assistant',
+                                content: '🗣️ (Voice Response)',
+                                audioUrl
+                            }];
+                        }
+                    });
+
+                    setIsProcessing(false);
+                    const audio = new Audio(audioUrl);
+                    audio.play();
+                } else if (typeof event.data === 'string') {
+                    try {
+                        const data = JSON.parse(event.data);
+                        if (data.type === 'text_response') {
+                            setIsProcessing(false);
+                            setMessages(prev => [...prev, {
+                                role: 'assistant',
+                                content: data.text
+                            }]);
+                        } else if (data.type === 'transcription') {
+                            setMessages(prev => {
+                                const newMsgs = [...prev];
+                                const lastUser = [...newMsgs].reverse().find(m => m.role === 'user');
+                                if (lastUser && lastUser.content === '🎤 Voice Message') {
+                                    lastUser.content = `🎤 ${data.text}`;
+                                }
+                                return newMsgs;
+                            });
+                        } else if (data.type === 'error') {
+                            setIsProcessing(false);
+                            setMessages(prev => [...prev, { role: 'assistant', content: `Error: ${data.message}` }]);
+                        }
+                    } catch (e) {
+                        console.error("Invalid WS message", e);
+                    }
+                }
+            };
+
+            socket.onclose = () => {
+                setWsStatus('disconnected');
+                wsRef.current = null;
+                reconnectTimeout = window.setTimeout(connectWs, 3000);
+            };
+
+            socket.onerror = (err) => {
+                console.error("WebSocket error:", err);
+                socket.close();
+            };
+        };
+
+        connectWs();
+
         return () => {
+            clearTimeout(reconnectTimeout);
+            if (wsRef.current) {
+                wsRef.current.close();
+            }
             createdUrlsRef.current.forEach(url => URL.revokeObjectURL(url));
         };
     }, []);
 
     const startRecording = async () => {
+        if (wsStatus !== 'connected' || !wsRef.current) {
+            console.error("WebSocket not connected");
+            return;
+        }
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+            // Note: browser support for mimeType may vary, webm/audio or audio/ogg is typical
             const mediaRecorder = new MediaRecorder(stream);
             mediaRecorderRef.current = mediaRecorder;
-            audioChunksRef.current = [];
+
+            setMessages(prev => [...prev, { role: 'user', content: '🎤 Voice Message' }]);
+            setIsProcessing(true);
 
             mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
+                if (event.data.size > 0 && wsRef.current?.readyState === WebSocket.OPEN) {
+                    wsRef.current.send(event.data);
                 }
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/wav' });
-                handleVoiceSend(audioBlob); // Auto send on stop
+                if (wsRef.current?.readyState === WebSocket.OPEN) {
+                    wsRef.current.send(JSON.stringify({ type: 'stop_recording' }));
+                }
             };
 
-            mediaRecorder.start();
+            mediaRecorder.start(250);
             setIsRecording(true);
         } catch (error) {
             console.error('Error accessing microphone:', error);
-            // Handle permission error visually
+            setIsProcessing(false);
         }
     };
 
@@ -65,61 +158,7 @@ export const QwenOmniPage: React.FC = () => {
         if (mediaRecorderRef.current && isRecording) {
             mediaRecorderRef.current.stop();
             setIsRecording(false);
-            // Stop all tracks
             mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-        }
-    };
-
-    const handleVoiceSend = async (blob: Blob) => {
-        setIsProcessing(true);
-        // Add optimistic user message (audio placeholder or generic wav icon)
-        const userMsg: Message = { role: 'user', content: '🎤 Voice Message' };
-        setMessages(prev => [...prev, userMsg]);
-
-        const formData = new FormData();
-        formData.append('audio', blob, 'recording.wav');
-
-        try {
-            // Direct call to voice_service
-            const response = await fetch('http://localhost:5004/api/v1/omni/chat', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) throw new Error('Voice service error');
-
-            // Expecting audio/wav response with headers indicating text? 
-            // Or multipart response? For now, let's assume we get audio back 
-            // and maybe we need a different endpoint layout or response format to get BOTH text and audio.
-            // Requirement said "live bidirectional voice", "text chat".
-            // Implementation plan said "Audio -> STT -> Qwen -> TTS -> Audio response".
-            // Let's assume the response IS the audio blob of the answer.
-            // And maybe we can fetch the transcription via headers or a separate call? 
-            // For MVP "Live Voice", let's play the audio. 
-
-            // Expecting JSON response with { text: "...", audio: "base64..." }
-            const data = await response.json();
-
-            // Decode base64 audio
-            const audioResponseBlob = await (await fetch(`data:audio/wav;base64,${data.audio}`)).blob();
-            const audioUrl = URL.createObjectURL(audioResponseBlob);
-            createdUrlsRef.current.push(audioUrl);
-
-            setMessages(prev => [...prev, {
-                role: 'assistant',
-                content: data.text || '🗣️ (Voice Response)',
-                audioUrl
-            }]);
-
-            // Auto play
-            const audio = new Audio(audioUrl);
-            audio.play();
-
-        } catch (error) {
-            console.error(error);
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Error communicating with Qwen Omni.' }]);
-        } finally {
-            setIsProcessing(false);
         }
     };
 
@@ -140,19 +179,22 @@ export const QwenOmniPage: React.FC = () => {
         setUploadFile(null);
         setIsProcessing(true);
 
+        if (wsStatus === 'connected' && wsRef.current && !uploadFile) {
+            wsRef.current.send(JSON.stringify({
+                type: 'text_chat',
+                text: userMsg.content
+            }));
+            return;
+        }
+
+        // Fallback for file uploads
         const formData = new FormData();
         formData.append('text', userMsg.content);
         if (uploadFile) {
-            formData.append('image', uploadFile); // or 'file'
+            formData.append('audio', uploadFile);
         }
 
         try {
-            // If text only, we treat it as text-chat. 
-            // Does /omni/chat handle text input? We need to ensure backend handles it.
-            // If backend expects audio, we need a flexible endpoint.
-
-            // Let's assume we use the SAME endpoint /v1/omni/chat but pass 'text' instead of 'audio'.
-
             const response = await fetch('http://localhost:5004/api/v1/omni/chat', {
                 method: 'POST',
                 body: formData,
@@ -160,14 +202,7 @@ export const QwenOmniPage: React.FC = () => {
 
             if (!response.ok) throw new Error('Omni service error');
 
-            // Handle response (Text + Audio?)
-            // For text chat, we probably prefer text response + optional audio.
-            // If we get blob, it's likely audio.
-
-            // Expecting JSON response with { text: "...", audio: "base64..." }
             const data = await response.json();
-
-            // Decode base64 audio
             const audioResponseBlob = await (await fetch(`data:audio/wav;base64,${data.audio}`)).blob();
             const audioUrl = URL.createObjectURL(audioResponseBlob);
             createdUrlsRef.current.push(audioUrl);
@@ -180,7 +215,6 @@ export const QwenOmniPage: React.FC = () => {
 
             const audio = new Audio(audioUrl);
             audio.play();
-
         } catch (error) {
             console.error(error);
             setMessages(prev => [...prev, { role: 'assistant', content: 'Error: ' + error }]);
@@ -204,8 +238,14 @@ export const QwenOmniPage: React.FC = () => {
                     <h2 className="text-lg font-semibold text-white">Qwen Omni (Live Voice)</h2>
                 </div>
                 <div className="text-xs text-zinc-500 flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-zinc-700'}`}></span>
-                    {isRecording ? 'Recording...' : 'Ready'}
+                    {wsStatus === 'connecting' && <span className="text-yellow-500 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse"></span> Connecting...</span>}
+                    {wsStatus === 'disconnected' && <span className="text-red-500 flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500"></span> Disconnected</span>}
+                    {wsStatus === 'connected' && (
+                        <>
+                            <span className={`w-2 h-2 rounded-full ${isRecording ? 'bg-red-500 animate-pulse' : 'bg-green-500'}`}></span>
+                            {isRecording ? 'Recording...' : 'Connected'}
+                        </>
+                    )}
                 </div>
             </div>
 

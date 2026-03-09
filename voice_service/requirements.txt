@@ -1,3 +1,4 @@
 qwen-tts
 faster-whisper
 python-multipart
+websockets
